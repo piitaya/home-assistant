@@ -13,6 +13,7 @@ from homeassistant.components import (
     lock,
     scene,
     script,
+    sensor,
     switch,
     vacuum,
 )
@@ -61,6 +62,7 @@ TRAIT_FANSPEED = PREFIX_TRAITS + 'FanSpeed'
 TRAIT_MODES = PREFIX_TRAITS + 'Modes'
 TRAIT_OPENCLOSE = PREFIX_TRAITS + 'OpenClose'
 TRAIT_VOLUME = PREFIX_TRAITS + 'Volume'
+TRAIT_SENSOR = PREFIX_TRAITS + 'Sensor'
 
 PREFIX_COMMANDS = 'action.devices.commands.'
 COMMAND_ONOFF = PREFIX_COMMANDS + 'OnOff'
@@ -1242,3 +1244,83 @@ def _verify_ack_challenge(data, state, challenge):
     """Verify a pin challenge."""
     if not challenge or not challenge.get('ack'):
         raise ChallengeNeeded(CHALLENGE_ACK_NEEDED)
+
+
+@register_trait
+class SensorTrait(_Trait):
+    """Trait to open and close a cover.
+
+    https://developers.google.com/actions/smarthome/traits/openclose
+    """
+
+    name = TRAIT_SENSOR
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == sensor.DOMAIN and device_class in (
+            sensor.DEVICE_CLASS_TEMPERATURE,
+        )
+
+    def sync_attributes(self):
+        """Return supported data types."""
+        response = {}
+        response['dataTypesSupported'] = [{
+            "name": "temperature",
+            "data_type": [{"type_synonym": ["temperature"], "lang": "en"}],
+            "default_device_unit": "C"
+        }]
+
+        _LOGGER.info("get temperature attribute !")
+
+        return response
+
+    def query_attributes(self):
+        """Return state query attributes."""
+        domain = self.state.domain
+        response = {}
+
+        # if self.override_position is not None:
+        #     response['openPercent'] = self.override_position
+
+        # elif domain == cover.DOMAIN:
+        #     # When it's an assumed state, we will return that querying state
+        #     # is not supported.
+        #     if self.state.attributes.get(ATTR_ASSUMED_STATE):
+        #         raise SmartHomeError(
+        #             ERR_NOT_SUPPORTED,
+        #             'Querying state is not supported')
+
+        #     if self.state.state == STATE_UNKNOWN:
+        #         raise SmartHomeError(
+        #             ERR_NOT_SUPPORTED,
+        #             'Querying state is not supported')
+
+        #     position = self.override_position or self.state.attributes.get(
+        #         cover.ATTR_CURRENT_POSITION
+        #     )
+
+        #     if position is not None:
+        #         response['openPercent'] = position
+        #     elif self.state.state != cover.STATE_CLOSED:
+        #         response['openPercent'] = 100
+        #     else:
+        #         response['openPercent'] = 0
+
+        # elif domain == binary_sensor.DOMAIN:
+        #     if self.state.state == STATE_ON:
+        #         response['openPercent'] = 100
+        #     else:
+        #         response['openPercent'] = 0
+
+        _LOGGER.info("get temperature log !")
+        response['devices'] = [{
+            "name": "temperature",
+            "data_type_key": "temperature",
+            "default_device_units": "C",
+            "data_value": 30
+        }]
+
+
+
+        return response
